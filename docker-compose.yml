@@ -1,0 +1,40 @@
+version: '2'
+services:
+    olla_db:
+        image: mysql
+        ports:
+            - "3000:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: symfony
+            MYSQL_USER: symfony
+            MYSQL_PASSWORD: symfony
+    olla_php:
+        build: ./docker/php-fpm
+        ports:
+            - "9000:9000"
+        volumes:
+            - ./plarform:/var/www/symfony:cached
+            - ./docker/logs/symfony:/var/www/symfony/var/logs:cached
+        links:
+            - olla_db
+    olla_nginx:
+        build: ./docker/nginx
+        ports:
+            - "8000:80"
+        links:
+            - olla_php
+        volumes_from:
+            - olla_php
+        volumes:
+            - ./docker/logs/nginx/:/var/log/nginx:cached
+    olla_elk:
+        image: willdurand/elk
+        ports:
+            - "81:80"
+        volumes:
+            - ./docker/elk/logstash:/etc/logstash:cached
+            - ./docker/elk/logstash/patterns:/opt/logstash/patterns:cached
+        volumes_from:
+            - olla_php
+            - olla_nginx
